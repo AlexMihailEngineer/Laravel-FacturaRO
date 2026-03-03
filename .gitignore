@@ -26,3 +26,5 @@ Thumbs.db
 # AI Assistant & Boost Tools
 .agents/
 .gemini/
+AGENTS.md
+GEMINI.md
