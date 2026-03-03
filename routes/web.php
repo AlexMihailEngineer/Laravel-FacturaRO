@@ -1,7 +1,5 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
+use App\Domain\Invoice\Controllers\AuthController;
 
-Route::get('/', function () {
-    return view('welcome');
-});
+// Route::get('/auth', [AuthController::class, 'index']);

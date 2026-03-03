@@ -1,0 +1,25 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    # The directories PHPStan should analyze
+    paths:
+        - src/
+        - tests/
+
+    # The level of strictness. Level 0 is the loosest, Level 9 is the strictest.
+    # Level 5 is a great starting point for catching serious bugs without being overly pedantic.
+    level: 5
+
+    # Sometimes Larastan catches things that are technically correct in Laravel's ecosystem
+    # but fail strict static analysis. You can ignore specific patterns here.
+    ignoreErrors:
+        # - '#Call to an undefined method [a-zA-Z0-9\\_]+::someMagicMethod\(\)#'
+
+    # Exclude files or directories that shouldn't be analyzed (like stubs or temporary files)
+    excludePaths:
+        # - tests/Fixtures/*
+
+    # If your package uses specific traits or magic properties that Larastan can't guess,
+    # you can define them, though the extension handles most of this out of the box.
+    checkMissingIterableValueType: false

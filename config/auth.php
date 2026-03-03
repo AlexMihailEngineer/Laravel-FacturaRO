@@ -31,7 +31,7 @@ return [
     | users are actually retrieved out of your database or other storage
     | system used by the application. Typically, Eloquent is utilized.
     |
-    | Supported: "session"
+    | Supported: "session", "token"
     |
     */
 
@@ -52,8 +52,7 @@ return [
     | system used by the application. Typically, Eloquent is utilized.
     |
     | If you have multiple user tables or models you may configure multiple
-    | providers to represent the model / table. These providers may then
-    | be assigned to any extra authentication guards you have defined.
+    | providers based on the model which actually represents the user.
     |
     | Supported: "database", "eloquent"
     |
@@ -85,8 +84,8 @@ return [
     | they have less time to be guessed. You may change this as needed.
     |
     | The throttle setting is the number of seconds a user must wait before
-    | generating more password reset tokens. This prevents the user from
-    | quickly generating a very large amount of password reset tokens.
+    | generating more reset tokens. This prevents users from over-requesting
+    | reset tokens.
     |
     */
 
@@ -104,7 +103,7 @@ return [
     | Password Confirmation Timeout
     |--------------------------------------------------------------------------
     |
-    | Here you may define the number of seconds before a password confirmation
+    | Here you may define the amount of seconds before a password confirmation
     | window expires and users are asked to re-enter their password via the
     | confirmation screen. By default, the timeout lasts for three hours.
     |
