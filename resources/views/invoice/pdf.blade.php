@@ -70,14 +70,14 @@
         </tr>
         <tr>
             <td>
-                <strong>{{ $supplier['name'] }}</strong><br>
-                CUI/CIF: {{ $supplier['cui'] }}<br>
-                {{ $supplier['address'] ?? '' }}
+                <strong>{{ $supplier->name }}</strong><br>
+                CUI/CIF: {{ $supplier->cui }}<br>
+                {{ $supplier->address ?? '' }}
             </td>
             <td>
-                <strong>{{ $customer['name'] }}</strong><br>
-                CUI/CIF: {{ $customer['cui'] }}<br>
-                {{ $customer['address'] ?? '' }}
+                <strong>{{ $customer->name }}</strong><br>
+                CUI/CIF: {{ $customer->cui }}<br>
+                {{ $customer->address ?? '' }}
             </td>
         </tr>
     </table>
@@ -98,17 +98,17 @@
         <tbody>
             @foreach($items as $index => $item)
                 @php
-                    $net = bcmul($item['quantity'], $item['unit_price'], 2);
-                    $vat = bcmul($net, bcdiv($item['vat_rate'], '100', 4), 2);
+                    $net = bcmul($item->quantity, $item->unitPrice, 2);
+                    $vat = bcmul($net, bcdiv($item->vatRate, '100', 4), 2);
                 @endphp
                 <tr>
                     <td>{{ $index + 1 }}</td>
-                    <td>{{ $item['name'] }}</td>
+                    <td>{{ $item->name }}</td>
                     <td>buc</td>
-                    <td>{{ number_format($item['quantity'], 2) }}</td>
-                    <td>{{ number_format($item['unit_price'], 2) }}</td>
+                    <td>{{ number_format($item->quantity, 2) }}</td>
+                    <td>{{ number_format($item->unitPrice, 2) }}</td>
                     <td>{{ number_format($net, 2) }}</td>
-                    <td>{{ $item['vat_rate'] }}%</td>
+                    <td>{{ $item->vatRate }}%</td>
                     <td>{{ number_format($vat, 2) }}</td>
                 </tr>
             @endforeach
@@ -124,9 +124,9 @@
                         $totalNet = '0.00';
                         $totalVat = '0.00';
                         foreach($items as $item) {
-                            $net = bcmul($item['quantity'], $item['unit_price'], 2);
+                            $net = bcmul($item->quantity, $item->unitPrice, 2);
                             $totalNet = bcadd($totalNet, $net, 2);
-                            $totalVat = bcadd($totalVat, bcmul($net, bcdiv($item['vat_rate'], '100', 4), 2), 2);
+                            $totalVat = bcadd($totalVat, bcmul($net, bcdiv($item->vatRate, '100', 4), 2), 2);
                         }
                     @endphp
                     {{ number_format($totalNet, 2) }} RON
