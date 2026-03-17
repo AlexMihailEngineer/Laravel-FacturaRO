@@ -7,10 +7,12 @@ use App\Domain\Invoice\Entities\Invoice;
 interface InvoiceRendererInterface
 {
     /**
-     * Renders an invoice into a specific format (PDF, XML, etc.)
-     * 
-     * @param Invoice $invoice
-     * @return string The rendered content
+     * Renders a domain Invoice entity into a specific format string.
      */
     public function render(Invoice $invoice): string;
+
+    /**
+     * Returns the file extension for the rendered format (e.g., 'pdf', 'xml').
+     */
+    public function getExtension(): string;
 }

@@ -11,6 +11,9 @@ class CompanyData extends Data
 {
     public function __construct(
         public string $name,
-        public string $cui, // You could even add your RomanianCuiRule validation right here!
+        public string $cui,
+        public string $address,
+        // This will map from 'registration_number' in the JSON
+        public ?string $registrationNumber = null,
     ) {}
 }
