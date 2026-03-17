@@ -42,7 +42,31 @@ readonly class Money
 
     public function multiply(string|float|int $multiplier): self
     {
-        return new self(bcmul($this->amount, (string)$multiplier, $this->decimals), $this->decimals);
+        // Multiply with extra precision then round to current decimal scale
+        $result = bcmul($this->amount, (string)$multiplier, $this->decimals + 1);
+        return self::round($result, $this->decimals);
+    }
+
+    public static function round(string|float|int $amount, int $decimals = 2): self
+    {
+        $amountStr = (string)$amount;
+        $isNegative = str_starts_with($amountStr, '-');
+        $absoluteAmount = ltrim($amountStr, '-');
+
+        // Shift decimal point to right by (decimals + 1)
+        $shifted = bcmul($absoluteAmount, bcpow('10', (string)($decimals + 1)), 0);
+        
+        // Extract the last digit for half-up rounding
+        $lastDigit = bcmod($shifted, '10');
+        $base = bcdiv($shifted, '10', 0);
+
+        if ((int)$lastDigit >= 5) {
+            $base = bcadd($base, '1', 0);
+        }
+
+        // Shift decimal point back to the left
+        $rounded = bcdiv($base, bcpow('10', (string)$decimals), $decimals);
+        return new self($isNegative ? '-' . $rounded : $rounded, $decimals);
     }
 
     public function getFormatted(): string

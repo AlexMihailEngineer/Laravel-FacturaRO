@@ -14,28 +14,35 @@ class RomanianCuiRule implements ValidationRule
      */
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
-        $v = (string) $value;
-        if (str_starts_with(strtoupper($v), 'RO')) {
-            $v = substr($v, 2);
+        $v = trim((string)$value);
+        $v = strtoupper($v);
+        
+        if (str_starts_with($v, 'RO')) {
+            $v = trim(substr($v, 2));
         }
 
-        $cui = preg_replace('/[^0-9]/', '', $v);
+        if (!preg_match('/^[0-9]+$/', $v)) {
+            $fail('The :attribute must contain only digits (optionally prefixed by RO).');
+            return;
+        }
+
+        $cui = $v;
 
         if (strlen($cui) < 2 || strlen($cui) > 10) {
             $fail('The :attribute must be a valid Romanian CUI (between 2 and 10 digits).');
             return;
         }
 
-        $c_digit = (int) substr($cui, -1);
+        $controlDigit = (int) substr($cui, -1);
         $baseCui = substr($cui, 0, -1);
         
-        $v_key = "753217532";
-        $keyRev = strrev($v_key);
+        // Testing key: 753217532 (reversed: 2, 3, 5, 7, 1, 2, 3, 5, 7)
+        $weights = [2, 3, 5, 7, 1, 2, 3, 5, 7];
         $baseRev = strrev($baseCui);
         
         $sum = 0;
         for ($i = 0; $i < strlen($baseRev); $i++) {
-            $sum += (int)$baseRev[$i] * (int)$keyRev[$i];
+            $sum += (int)$baseRev[$i] * $weights[$i];
         }
 
         $calculatedDigit = ($sum * 10) % 11;
@@ -43,8 +50,8 @@ class RomanianCuiRule implements ValidationRule
             $calculatedDigit = 0;
         }
 
-        if ($calculatedDigit !== $c_digit) {
-            $fail('The :attribute is not a valid Romanian CUI (failed Modulo 11 check).');
+        if ($calculatedDigit !== $controlDigit) {
+            $fail('The :attribute is not a valid Romanian CUI (failed checksum).');
         }
     }
 }

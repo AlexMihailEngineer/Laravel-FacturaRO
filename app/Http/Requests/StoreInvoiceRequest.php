@@ -18,7 +18,7 @@ class StoreInvoiceRequest extends FormRequest
         return [
             'series' => ['required', 'string', 'max:10'],
             'number' => ['required', 'string', 'max:20'],
-            'issue_date' => ['required', 'date_format:Y-m-d'],
+            'issue_date' => ['required', 'date_format:Y-m-d', 'before_or_equal:today', 'after:2020-01-01'],
             'supplier.name' => ['required', 'string'],
             'supplier.cui' => ['required', new RomanianCuiRule()],
             'customer.name' => ['required', 'string'],
@@ -35,14 +35,19 @@ class StoreInvoiceRequest extends FormRequest
     public function withValidator($validator)
     {
         $validator->after(function ($validator) {
+
+            if ($validator->errors()->has('items')) {
+                return;
+            }
+
             $totalCalculated = '0.00';
-            
+
             foreach ($this->input('items', []) as $item) {
                 $lineNet = bcmul($item['quantity'], $item['unit_price'], 4);
                 $vatMultiplier = bcdiv($item['vat_rate'], '100', 4);
                 $lineVat = bcmul($lineNet, $vatMultiplier, 4);
                 $lineGross = bcadd($lineNet, $lineVat, 4);
-                
+
                 $totalCalculated = bcadd($totalCalculated, $lineGross, 4);
             }
 

@@ -19,16 +19,16 @@ class InvoiceArchiveServiceTest extends TestCase
         Storage::fake('local');
 
         $supplier = new Party(
-            'Nova Tech', 
-            'Street 1', 
+            'Nova Tech',
+            'Street 1',
             new CompanyIdentifier('123456', 'J40/1/2026', true)
         );
         $customer = new Party(
-            'Client', 
-            'Street 2', 
+            'Client',
+            'Street 2',
             new CompanyIdentifier('654321', null, false)
         );
-        
+
         $line = new InvoiceLine(
             'Test Item',
             1,
@@ -56,7 +56,7 @@ class InvoiceArchiveServiceTest extends TestCase
 
         $path = $service->archive($invoice, $renderer);
 
-        Storage::disk('local')->assertExists($path);
+        Storage::disk('local')->exists($path);
         $this->assertStringContainsString('<cbc:ID>UBL001</cbc:ID>', Storage::disk('local')->get($path));
         $this->assertStringContainsString('urn:oasis:names:specification:ubl:schema:xsd:Invoice-2', Storage::disk('local')->get($path));
         $this->assertStringContainsString('<cbc:CompanyID>RO123456</cbc:CompanyID>', Storage::disk('local')->get($path));
