@@ -15,11 +15,12 @@ class InvoiceStoreController extends Controller
     {
         // 1. Transform Request to DTO
         $dto = InvoiceData::from($request->validated());
+        $requestId = (string) Str::uuid();
 
         // 2. Persist the Intent (Database Record)
         // This acts as the "Source of Truth" for Phase 2 Status Tracking
         DB::table('invoice_requests')->insert([
-            'id' => (string) Str::uuid(),
+            'id' => $requestId,
             'status' => 'pending',
             'series' => $dto->series,
             'number' => $dto->number,
@@ -44,11 +45,11 @@ class InvoiceStoreController extends Controller
         ]);
 
         // 3. Dispatch the Job
-        GenerateInvoicePdfJob::dispatch($dto);
+        GenerateInvoicePdfJob::dispatch($dto, $requestId);
 
         return response()->json([
             'message' => 'Invoice generation started.',
-            'status' => 'accepted'
+            'job_id' => $requestId
         ], 202);
     }
 }

@@ -19,53 +19,66 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Storage;
 use DateTimeImmutable;
+use PhpParser\Node\Expr\Throw_;
+use Throwable;
+use Illuminate\Support\Facades\DB;
 
 class GenerateInvoicePdfJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public function __construct(
-        protected InvoiceData $invoiceData
+        protected InvoiceData $invoiceData,
+        protected string $requestId
     ) {}
 
     public function handle(InvoiceBuilder $builder): void
     {
-        // 1. Map DTOs to Domain Entities
-        $supplier = $this->mapCompanyToParty($this->invoiceData->supplier);
-        $customer = $this->mapCompanyToParty($this->invoiceData->customer);
+        try {
+            $this->updateStatus('processing');
 
-        // 2. Build the Invoice Aggregate
-        $builder->setMetadata(
-            series: $this->invoiceData->series,
-            number: $this->invoiceData->number,
-            issueDate: new DateTimeImmutable($this->invoiceData->issueDate)
-        )
-            ->setSupplier($supplier)
-            ->setCustomer($customer);
+            // 1. Map DTOs to Domain Entities
+            $supplier = $this->mapCompanyToParty($this->invoiceData->supplier);
+            $customer = $this->mapCompanyToParty($this->invoiceData->customer);
 
-        foreach ($this->invoiceData->items as $item) {
-            $builder->addLine($this->mapLineToEntity($item));
+            // 2. Build the Invoice Aggregate
+            $builder->setMetadata(
+                series: $this->invoiceData->series,
+                number: $this->invoiceData->number,
+                issueDate: new DateTimeImmutable($this->invoiceData->issueDate)
+            )
+                ->setSupplier($supplier)
+                ->setCustomer($customer);
+
+            foreach ($this->invoiceData->items as $item) {
+                $builder->addLine($this->mapLineToEntity($item));
+            }
+
+            $invoice = $builder->build();
+
+            // 3. Render using the Service and Strategy
+            // Note: In a production app, we might resolve the strategy from the container
+            // or a factory based on user preference (PDF vs XML).
+            $renderer = new DomPdfRendererStrategy();
+            $generator = new InvoiceGeneratorService($renderer);
+
+            $content = $generator->generate($invoice);
+
+            // 4. Store the Result
+            $path = "invoices/{$this->requestId}.pdf";
+            Storage::disk('local')->put($path, $content);
+
+            // D. Mark as Completed
+            DB::table('invoice_requests')
+                ->where('id', $this->requestId)
+                ->update([
+                    'status' => 'completed',
+                    'file_path' => $path,
+                    'updated_at' => now(),
+                ]);
+        } catch (Throwable $e) {
+            $this->fail($e);
         }
-
-        $invoice = $builder->build();
-
-        // 3. Render using the Service and Strategy
-        // Note: In a production app, we might resolve the strategy from the container
-        // or a factory based on user preference (PDF vs XML).
-        $renderer = new DomPdfRendererStrategy();
-        $generator = new InvoiceGeneratorService($renderer);
-
-        $content = $generator->generate($invoice);
-
-        // 4. Store the Result
-        $fileName = sprintf(
-            'invoices/%s_%s.%s',
-            $invoice->getSeries(),
-            $invoice->getNumber(),
-            $renderer->getExtension()
-        );
-
-        Storage::disk('local')->put($fileName, $content);
     }
 
     private function mapCompanyToParty(CompanyData $data): Party
@@ -90,5 +103,24 @@ class GenerateInvoicePdfJob implements ShouldQueue
             unitPrice: Money::fromAmount($data->unitPrice),
             vatPercentage: $data->vatRate
         );
+    }
+
+    /**
+     * Handle a job failure.
+     */
+    public function failed(Throwable $exception): void
+    {
+        $this->updateStatus('failed');
+        // Optional: Log the specific error for internal debugging
+    }
+
+    private function updateStatus(string $status): void
+    {
+        DB::table('invoice_requests')
+            ->where('id', $this->requestId)
+            ->update([
+                'status' => $status,
+                'updated_at' => now()
+            ]);
     }
 }
